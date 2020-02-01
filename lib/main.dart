@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 void main() => runApp(MyApp());
 
@@ -24,6 +25,90 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  Future<void> computeFuture = Future.value();
+
+  addButton1() {
+    return FutureBuilder<void>(
+      future: computeFuture,
+      builder: (context, snapshot) {
+        return OutlineButton(
+          child: const Text('Main Isolate'),
+          onPressed: createMainIsolateCallback(context, snapshot),
+        );
+      },
+    );
+  }
+
+  addButton2() {
+    return FutureBuilder<void>(
+      future: computeFuture,
+      builder: (context, snapshot) {
+        return OutlineButton(
+          child: const Text('Secondary Isolate'),
+          onPressed: createSecondaryIsolateCallback(context, snapshot),
+        );
+      },
+    );
+  }
+
+  VoidCallback createMainIsolateCallback(
+      BuildContext context, AsyncSnapshot snapshot) {
+    if (snapshot.connectionState == ConnectionState.done) {
+      return () {
+        setState(() {
+          computeFuture = createOnMainIsolate().then((val) {
+            showSnackBar(context, 'Main Isolate Value $val');
+          });
+        });
+      };
+    } else {
+      return null;
+    }
+  }
+
+  VoidCallback createSecondaryIsolateCallback(
+      BuildContext context, AsyncSnapshot snapshot) {
+    if (snapshot.connectionState == ConnectionState.done) {
+      return () {
+        setState(() {
+          computeFuture = createOnSecondaryIsolate().then((val) {
+            showSnackBar(context, 'Secondary Isolate Value $val');
+          });
+        });
+      };
+    } else {
+      return null;
+    }
+  }
+
+  Future<int> createOnMainIsolate() async {
+    return await Future.delayed(Duration(milliseconds: 100), () => fib(40));
+  }
+
+  Future<int> createOnSecondaryIsolate() async {
+    return await compute(fib, 40);
+  }
+
+  static int fib(int n) {
+    int numb1 = n - 1;
+    int numb2 = n - 2;
+    if (1 == n) {
+      return 0;
+    } else if (0 == n) {
+      return 1;
+    } else {
+      return (fib(numb1) + fib(numb2));
+    }
+  }
+
+  showSnackBar(context, message) {
+    Scaffold.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,7 +119,9 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            
+            AnimatedWidget(),
+            addButton1(),
+            addButton2()
           ],
         ),
       ),
@@ -42,35 +129,34 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class AnimatedWidget extends StatefulWidget{
+class AnimatedWidget extends StatefulWidget {
   @override
   AnimatedWidgetState createState() => AnimatedWidgetState();
 }
 
-class AnimatedWidgetState extends State<AnimatedWidget> with TickerProviderStateMixin{
+class AnimatedWidgetState extends State<AnimatedWidget>
+    with TickerProviderStateMixin {
   AnimationController _animationController;
   Animation<BorderRadius> _borderRadis;
 
   @override
-  void initState(){
+  void initState() {
     super.initState();
-    
-    _animationController = AnimationController(duration: const Duration(seconds: 1),vsync: this)
-    ..addStatusListener((status){
-      if(status == AnimationStatus.completed){
-        _animationController.reverse();
-      }else if(status == AnimationStatus.dismissed){
-        _animationController.forward();
-      }
-    });
+
+    _animationController = AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _animationController.reverse();
+        } else if (status == AnimationStatus.dismissed) {
+          _animationController.forward();
+        }
+      });
 
     _borderRadis = BorderRadiusTween(
-      begin: BorderRadius.circular(100),
-      end: BorderRadius.circular(0)
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.linear
-    ));
+            begin: BorderRadius.circular(100), end: BorderRadius.circular(0))
+        .animate(CurvedAnimation(
+            parent: _animationController, curve: Curves.linear));
 
     _animationController.forward();
   }
@@ -79,7 +165,7 @@ class AnimatedWidgetState extends State<AnimatedWidget> with TickerProviderState
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _borderRadis,
-      builder: (context, child){
+      builder: (context, child) {
         return Center(
           child: Container(
             child: FlutterLogo(
@@ -89,9 +175,7 @@ class AnimatedWidgetState extends State<AnimatedWidget> with TickerProviderState
             width: 350,
             height: 200,
             decoration: BoxDecoration(
-              color: Colors.green,
-              borderRadius: _borderRadis.value
-            ),
+                color: Colors.green, borderRadius: _borderRadis.value),
           ),
         );
       },
