@@ -1,0 +1,4 @@
+#Sat Feb 01 18:34:37 IST 2020
+base.0=/home/gurkaran/Documents/Git/Flutter-Isolates/build/app/intermediates/dex/debug/mergeDexDebug/out/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex
